@@ -59,6 +59,8 @@ func TestErrorCategories(t *testing.T) {
 		{gociconnect.ErrorCodeProviderResponse, gociconnect.ErrProviderResponse},
 		{gociconnect.ErrorCodeDecoding, gociconnect.ErrDecoding},
 		{gociconnect.ErrorCodeUnsupported, gociconnect.ErrUnsupported},
+		{gociconnect.ErrorCodeProviderNotFound, gociconnect.ErrProviderNotFound},
+		{gociconnect.ErrorCodeDuplicateProvider, gociconnect.ErrDuplicateProvider},
 	}
 
 	for _, test := range tests {

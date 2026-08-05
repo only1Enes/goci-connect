@@ -31,6 +31,10 @@ const (
 	ErrorCodeDecoding ErrorCode = "response_decoding_failed"
 	// ErrorCodeUnsupported identifies an operation unsupported by a provider.
 	ErrorCodeUnsupported ErrorCode = "unsupported_operation"
+	// ErrorCodeProviderNotFound identifies an unknown provider lookup.
+	ErrorCodeProviderNotFound ErrorCode = "provider_not_found"
+	// ErrorCodeDuplicateProvider identifies a duplicate name or alias registration.
+	ErrorCodeDuplicateProvider ErrorCode = "duplicate_provider"
 )
 
 var (
@@ -54,6 +58,10 @@ var (
 	ErrDecoding = &categoryError{code: ErrorCodeDecoding}
 	// ErrUnsupported matches operations unsupported by a provider.
 	ErrUnsupported = &categoryError{code: ErrorCodeUnsupported}
+	// ErrProviderNotFound matches unknown provider lookup errors.
+	ErrProviderNotFound = &categoryError{code: ErrorCodeProviderNotFound}
+	// ErrDuplicateProvider matches duplicate name or alias registration errors.
+	ErrDuplicateProvider = &categoryError{code: ErrorCodeDuplicateProvider}
 )
 
 // Error is a sanitized, inspectable provider operation error. Its cause is
@@ -171,7 +179,9 @@ func validErrorCode(code ErrorCode) bool {
 		ErrorCodeTransport,
 		ErrorCodeProviderResponse,
 		ErrorCodeDecoding,
-		ErrorCodeUnsupported:
+		ErrorCodeUnsupported,
+		ErrorCodeProviderNotFound,
+		ErrorCodeDuplicateProvider:
 		return true
 	default:
 		return false
@@ -200,6 +210,10 @@ func errorMessage(code ErrorCode) string {
 		return "provider response decoding failed"
 	case ErrorCodeUnsupported:
 		return "provider does not support this operation"
+	case ErrorCodeProviderNotFound:
+		return "provider not found"
+	case ErrorCodeDuplicateProvider:
+		return "provider name is already registered"
 	default:
 		return "authentication operation failed"
 	}
