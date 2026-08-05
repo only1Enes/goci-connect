@@ -213,7 +213,7 @@ func normalizeToken(token *oauth2.Token) gociconnect.Token {
 func extractScopes(value any) []string {
 	switch scopes := value.(type) {
 	case string:
-		return strings.Fields(scopes)
+		return splitScopeString(scopes)
 	case []string:
 		return cloneStrings(scopes)
 	case []any:
@@ -227,7 +227,7 @@ func extractScopes(value any) []string {
 	case json.RawMessage:
 		var text string
 		if json.Unmarshal(scopes, &text) == nil {
-			return strings.Fields(text)
+			return splitScopeString(text)
 		}
 		var values []string
 		if json.Unmarshal(scopes, &values) == nil {
@@ -237,4 +237,14 @@ func extractScopes(value any) []string {
 	default:
 		return nil
 	}
+}
+
+func splitScopeString(value string) []string {
+	scopes := strings.FieldsFunc(value, func(character rune) bool {
+		return character == ',' || character == ' ' || character == '\t' || character == '\r' || character == '\n'
+	})
+	if scopes == nil {
+		return []string{}
+	}
+	return scopes
 }
