@@ -35,6 +35,8 @@ const (
 	ErrorCodeProviderNotFound ErrorCode = "provider_not_found"
 	// ErrorCodeDuplicateProvider identifies a duplicate name or alias registration.
 	ErrorCodeDuplicateProvider ErrorCode = "duplicate_provider"
+	// ErrorCodeResponseTooLarge identifies a provider response over the configured limit.
+	ErrorCodeResponseTooLarge ErrorCode = "response_too_large"
 )
 
 var (
@@ -62,6 +64,8 @@ var (
 	ErrProviderNotFound = &categoryError{code: ErrorCodeProviderNotFound}
 	// ErrDuplicateProvider matches duplicate name or alias registration errors.
 	ErrDuplicateProvider = &categoryError{code: ErrorCodeDuplicateProvider}
+	// ErrResponseTooLarge matches provider responses over the configured limit.
+	ErrResponseTooLarge = &categoryError{code: ErrorCodeResponseTooLarge}
 )
 
 // Error is a sanitized, inspectable provider operation error. Its cause is
@@ -181,7 +185,8 @@ func validErrorCode(code ErrorCode) bool {
 		ErrorCodeDecoding,
 		ErrorCodeUnsupported,
 		ErrorCodeProviderNotFound,
-		ErrorCodeDuplicateProvider:
+		ErrorCodeDuplicateProvider,
+		ErrorCodeResponseTooLarge:
 		return true
 	default:
 		return false
@@ -214,6 +219,8 @@ func errorMessage(code ErrorCode) string {
 		return "provider not found"
 	case ErrorCodeDuplicateProvider:
 		return "provider name is already registered"
+	case ErrorCodeResponseTooLarge:
+		return "provider response exceeds the configured limit"
 	default:
 		return "authentication operation failed"
 	}
