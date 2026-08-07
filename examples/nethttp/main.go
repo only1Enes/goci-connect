@@ -25,6 +25,9 @@ func main() {
 }
 
 func run() error {
+	if err := loadEnvironmentFile(".env"); err != nil {
+		return err
+	}
 	logger := log.New(os.Stdout, "nethttp-example: ", log.LstdFlags)
 	manager, err := managerFromEnvironment(os.Getenv)
 	if err != nil {

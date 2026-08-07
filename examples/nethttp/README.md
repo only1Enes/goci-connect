@@ -10,6 +10,17 @@ Configure at least one provider with a complete set of variables:
 | GitHub   | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_REDIRECT_URL` |
 | Google   | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URL` |
 
+From the repository root, copy the committed template and fill in credentials
+for GitHub, Google, or both:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+The example loads `.env` at startup. Existing process environment variables
+take precedence over values in the file. The populated `.env` is ignored by
+Git and must never be committed.
+
 For the default local address, use these callback URLs in the corresponding
 provider application settings:
 
