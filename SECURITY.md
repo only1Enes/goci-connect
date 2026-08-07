@@ -4,10 +4,10 @@
 
 Goci Connect has not published its first stable release. Security fixes are applied to the default branch. After releases begin, this table will identify the supported release lines.
 
-| Version | Supported |
-| --- | --- |
-| `main` | Yes |
-| Unreleased snapshots and forks | No |
+| Version                        | Supported |
+| ------------------------------ | --------- |
+| `main`                         | Yes       |
+| Unreleased snapshots and forks | No        |
 
 ## Reporting a Vulnerability
 

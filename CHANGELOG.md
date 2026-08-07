@@ -14,3 +14,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Concurrency-safe provider testkit.
 - Standard-library `net/http` example application.
 - CI, vulnerability scanning, dependency updates, and repository governance files.
+
+### Changed
+
+- Finalized public consumer documentation and private maintainer architecture documentation.
+
+### Fixed
+
+- Preserve context cancellation when it races a successful provider user response.

@@ -5,10 +5,10 @@ and only the Go standard library's `net/http` server.
 
 Configure at least one provider with a complete set of variables:
 
-| Provider | Required variables |
-| --- | --- |
-| GitHub | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_REDIRECT_URL` |
-| Google | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URL` |
+| Provider | Required variables                                                |
+| -------- | ----------------------------------------------------------------- |
+| GitHub   | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_REDIRECT_URL` |
+| Google   | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URL` |
 
 For the default local address, use these callback URLs in the corresponding
 provider application settings:
@@ -31,11 +31,11 @@ Then open `http://127.0.0.1:8080/`.
 
 Optional environment variables:
 
-| Variable | Purpose |
-| --- | --- |
-| `GOCI_CONNECT_ADDR` | Listen address; defaults to `127.0.0.1:8080`. |
-| `GOCI_CONNECT_TLS_CERT_FILE` | TLS certificate file used by `ListenAndServeTLS`. |
-| `GOCI_CONNECT_TLS_KEY_FILE` | TLS private-key file used by `ListenAndServeTLS`. |
+| Variable                     | Purpose                                                 |
+| ---------------------------- | ------------------------------------------------------- |
+| `GOCI_CONNECT_ADDR`          | Listen address; defaults to `127.0.0.1:8080`.           |
+| `GOCI_CONNECT_TLS_CERT_FILE` | TLS certificate file used by `ListenAndServeTLS`.       |
+| `GOCI_CONNECT_TLS_KEY_FILE`  | TLS private-key file used by `ListenAndServeTLS`.       |
 | `GOCI_CONNECT_SECURE_COOKIE` | Set to `true` when HTTPS terminates at a reverse proxy. |
 
 Direct TLS requires both TLS file variables. Direct TLS and the secure-cookie

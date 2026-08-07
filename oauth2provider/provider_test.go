@@ -396,6 +396,23 @@ func TestInjectedUserLoader(t *testing.T) {
 	}
 }
 
+func TestUserLoadingHonorsCancellationAfterLoaderReturns(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	provider := newTestProvider(t, "https://provider.example", func(config *oauth2provider.Config) {
+		config.UserEndpoint = ""
+		config.UserMapper = nil
+		config.UserLoader = oauth2provider.UserLoaderFunc(func(_ context.Context, _ oauth2provider.Fetcher, _ gociconnect.Token) (gociconnect.User, error) {
+			cancel()
+			return gociconnect.User{ID: "canceled-user"}, nil
+		})
+	})
+
+	_, err := provider.User(ctx, gociconnect.UserRequest{AccessToken: "access-token"})
+	if !errors.Is(err, context.Canceled) || !errors.Is(err, gociconnect.ErrTransport) {
+		t.Fatalf("User() error = %v", err)
+	}
+}
+
 func TestProviderCapabilities(t *testing.T) {
 	provider := newTestProvider(t, "https://provider.example")
 	capabilities := provider.Capabilities()

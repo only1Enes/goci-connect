@@ -136,6 +136,9 @@ func (provider *Provider) loadUser(ctx context.Context, token gociconnect.Token)
 		}
 		return gociconnect.User{}, gociconnect.NewError(gociconnect.ErrorCodeDecoding, provider.name, "load provider user", nil)
 	}
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return gociconnect.User{}, provider.contextError("load provider user", ctxErr)
+	}
 	user.Provider = provider.name
 	user.Token = token.Clone()
 	return user.Clone(), nil
