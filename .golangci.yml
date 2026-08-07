@@ -10,6 +10,11 @@ linters:
     - errorlint
     - misspell
     - revive
+  exclusions:
+    rules:
+      - linters:
+          - revive
+        text: 'exported method .*\.(Format|GoString) should have comment'
 
 formatters:
   enable:

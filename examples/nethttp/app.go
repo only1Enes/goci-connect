@@ -1,3 +1,4 @@
+// Package main demonstrates a net/http application using Goci Connect.
 package main
 
 import (

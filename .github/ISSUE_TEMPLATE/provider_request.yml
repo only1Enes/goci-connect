@@ -1,0 +1,51 @@
+name: Provider request
+description: Propose support for an OAuth provider
+title: "provider: "
+body:
+  - type: input
+    id: provider
+    attributes:
+      label: Provider
+      description: Use the provider's official product or service name.
+    validations:
+      required: true
+
+  - type: input
+    id: oauth-docs
+    attributes:
+      label: Official OAuth documentation
+      placeholder: https://example.com/oauth/docs
+    validations:
+      required: true
+
+  - type: input
+    id: user-docs
+    attributes:
+      label: Official user API documentation
+      placeholder: https://example.com/api/user
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: Explain who needs this provider and which profile fields or OAuth capabilities matter.
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Implementation notes
+      description: Note documented endpoint variants, PKCE support, refresh behavior, or self-hosted requirements.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: The provider has documented OAuth 2.0 endpoints and a documented current-user API.
+          required: true
+        - label: I searched existing issues and pull requests for this provider.
+          required: true

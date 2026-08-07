@@ -229,27 +229,40 @@ func TestConcurrentCallsAndConfiguration(t *testing.T) {
 		wait.Add(4)
 		go func() {
 			defer wait.Done()
-			if result, err := provider.Begin(context.Background(), gociconnect.BeginRequest{Scopes: []string{"profile"}}); err != nil || result.URL == "" {
-				errorsChannel <- fmt.Errorf("Begin() = %+v, %v", result, err)
+			result, err := provider.Begin(context.Background(), gociconnect.BeginRequest{Scopes: []string{"profile"}})
+			if err != nil {
+				errorsChannel <- fmt.Errorf("Begin(): %w", err)
+			} else if result.URL == "" {
+				errorsChannel <- fmt.Errorf("Begin() = %+v", result)
 			}
 		}()
 		go func() {
 			defer wait.Done()
-			if result, err := provider.Complete(context.Background(), gociconnect.CompleteRequest{}); err != nil || result.ID != "complete" {
-				errorsChannel <- fmt.Errorf("Complete() = %+v, %v", result, err)
+			result, err := provider.Complete(context.Background(), gociconnect.CompleteRequest{})
+			if err != nil {
+				errorsChannel <- fmt.Errorf("Complete(): %w", err)
+			} else if result.ID != "complete" {
+				errorsChannel <- fmt.Errorf("Complete() = %+v", result)
 			}
 		}()
 		go func() {
 			defer wait.Done()
 			result, err := provider.User(context.Background(), gociconnect.UserRequest{AccessToken: "token"})
-			if !(result.ID == "A" && errors.Is(err, errorA)) && !(result.ID == "B" && errors.Is(err, errorB)) {
-				errorsChannel <- fmt.Errorf("User() returned a mixed configuration: %+v, %v", result, err)
+			if (result.ID != "A" || !errors.Is(err, errorA)) && (result.ID != "B" || !errors.Is(err, errorB)) {
+				if err != nil {
+					errorsChannel <- fmt.Errorf("User() returned a mixed configuration: %+v: %w", result, err)
+				} else {
+					errorsChannel <- fmt.Errorf("User() returned a mixed configuration without an error: %+v", result)
+				}
 			}
 		}()
 		go func() {
 			defer wait.Done()
-			if result, err := provider.Refresh(context.Background(), gociconnect.RefreshRequest{}); err != nil || result.AccessToken != "refreshed" {
-				errorsChannel <- fmt.Errorf("Refresh() = %+v, %v", result, err)
+			result, err := provider.Refresh(context.Background(), gociconnect.RefreshRequest{})
+			if err != nil {
+				errorsChannel <- fmt.Errorf("Refresh(): %w", err)
+			} else if result.AccessToken != "refreshed" {
+				errorsChannel <- fmt.Errorf("Refresh() = %+v", result)
 			}
 		}()
 	}

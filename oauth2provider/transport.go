@@ -92,7 +92,9 @@ func (fetcher *apiFetcher) GetJSON(ctx context.Context, endpoint string, destina
 		}
 		return nil, gociconnect.NewError(gociconnect.ErrorCodeTransport, fetcher.providerName, "request provider user", nil)
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
 		return nil, gociconnect.NewError(gociconnect.ErrorCodeProviderResponse, fetcher.providerName, "request provider user", nil)
