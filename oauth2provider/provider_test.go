@@ -155,7 +155,7 @@ func TestCustomScopesAndParametersDoNotMutateConfiguration(t *testing.T) {
 
 func TestProtectedAuthorizationParametersAreRejected(t *testing.T) {
 	provider := newTestProvider(t, "https://provider.example")
-	for _, key := range []string{"client_id", "Client_Secret", "redirect_uri", "response_type", "scope", "state", "code_challenge", "CODE_CHALLENGE_METHOD", "code_verifier"} {
+	for _, key := range []string{"access_token", "client_id", "Client_Secret", "code", "redirect_uri", "refresh_token", "response_type", "scope", "state", "code_challenge", "CODE_CHALLENGE_METHOD", "code_verifier", "id_token"} {
 		t.Run(key, func(t *testing.T) {
 			_, err := provider.Begin(context.Background(), gociconnect.BeginRequest{Parameters: url.Values{key: {"unsafe"}}})
 			if !errors.Is(err, gociconnect.ErrInvalidRequest) {
@@ -168,7 +168,11 @@ func TestProtectedAuthorizationParametersAreRejected(t *testing.T) {
 func TestProtectedConfigurationParametersAreRejected(t *testing.T) {
 	tests := []func(*oauth2provider.Config){
 		func(config *oauth2provider.Config) { config.AuthorizationParameters = url.Values{"state": {"unsafe"}} },
+		func(config *oauth2provider.Config) {
+			config.AuthorizationParameters = url.Values{"access_token": {"unsafe"}}
+		},
 		func(config *oauth2provider.Config) { config.Endpoint.AuthURL += "?CLIENT_ID=unsafe" },
+		func(config *oauth2provider.Config) { config.Endpoint.AuthURL += "?refresh_token=unsafe" },
 	}
 	for index, option := range tests {
 		t.Run(fmt.Sprintf("case-%d", index), func(t *testing.T) {
@@ -363,6 +367,49 @@ func TestTokenRefresh(t *testing.T) {
 	}
 	if token.AccessToken != "new-access-token" || token.RefreshToken != "new-refresh-token" || !slicesEqual(token.Scopes, []string{"profile", "email"}) {
 		t.Fatalf("Refresh() = %+v", token)
+	}
+}
+
+func TestTokenRefreshPreservesExistingRefreshToken(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if err := request.ParseForm(); err != nil {
+			t.Error(err)
+		}
+		if request.Form.Get("refresh_token") != "existing-refresh-token" {
+			t.Errorf("refresh token = %q", request.Form.Get("refresh_token"))
+		}
+		writeJSON(writer, `{"access_token":"new-access-token","token_type":"Bearer"}`)
+	}))
+	defer server.Close()
+	provider := newTestProvider(t, server.URL)
+
+	token, err := provider.Refresh(context.Background(), gociconnect.RefreshRequest{RefreshToken: "existing-refresh-token"})
+	if err != nil {
+		t.Fatalf("Refresh() error = %v", err)
+	}
+	if token.AccessToken != "new-access-token" || token.RefreshToken != "existing-refresh-token" {
+		t.Fatalf("Refresh() = %+v", token)
+	}
+}
+
+func TestTokenRefreshHonorsCancellationAfterResponse(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	client := &http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) {
+		cancel()
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": {"application/json"}},
+			Body:       io.NopCloser(strings.NewReader(`{"access_token":"new-access-token","token_type":"Bearer"}`)),
+			Request:    request,
+		}, nil
+	})}
+	provider := newTestProvider(t, "https://provider.example", func(config *oauth2provider.Config) {
+		config.HTTPClient = client
+	})
+
+	_, err := provider.Refresh(ctx, gociconnect.RefreshRequest{RefreshToken: "refresh-token"})
+	if !errors.Is(err, context.Canceled) || !errors.Is(err, gociconnect.ErrTransport) {
+		t.Fatalf("Refresh() error = %v", err)
 	}
 }
 

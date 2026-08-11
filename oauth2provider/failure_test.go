@@ -96,6 +96,7 @@ func TestMalformedResponses(t *testing.T) {
 	})
 
 	t.Run("user mapping", func(t *testing.T) {
+		cause := errors.New("raw-user-secret")
 		server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 			writeJSON(writer, `{"id":"user"}`)
 		}))
@@ -103,12 +104,15 @@ func TestMalformedResponses(t *testing.T) {
 		provider := newTestProvider(t, server.URL, func(config *oauth2provider.Config) {
 			config.UserEndpoint = server.URL
 			config.UserMapper = oauth2provider.UserMapperFunc(func(json.RawMessage) (gociconnect.User, error) {
-				return gociconnect.User{}, errors.New("raw-user-secret")
+				return gociconnect.User{}, cause
 			})
 		})
 		_, err := provider.User(context.Background(), gociconnect.UserRequest{AccessToken: "access-token"})
 		if !errors.Is(err, gociconnect.ErrDecoding) {
 			t.Fatalf("User() error = %v", err)
+		}
+		if !errors.Is(err, cause) {
+			t.Fatal("user mapping error did not preserve its cause")
 		}
 		assertErrorRedacts(t, err, "raw-user-secret", "access-token")
 	})
@@ -118,6 +122,25 @@ func TestResponseSizeLimits(t *testing.T) {
 	t.Run("token response", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 			writeJSON(writer, `{"access_token":"this-token-response-is-intentionally-larger-than-the-limit","token_type":"Bearer"}`)
+		}))
+		defer server.Close()
+		provider := newTestProvider(t, server.URL, func(config *oauth2provider.Config) {
+			config.MaxResponseSize = 32
+		})
+		_, err := provider.Complete(context.Background(), validCompleteRequest())
+		if !errors.Is(err, gociconnect.ErrResponseTooLarge) {
+			t.Fatalf("Complete() error = %v", err)
+		}
+	})
+
+	t.Run("streamed token response", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+			writer.Header().Set("Content-Type", "application/json")
+			writer.WriteHeader(http.StatusOK)
+			if flusher, ok := writer.(http.Flusher); ok {
+				flusher.Flush()
+			}
+			_, _ = io.WriteString(writer, `{"access_token":"this-streamed-token-response-is-larger-than-the-limit","token_type":"Bearer"}`)
 		}))
 		defer server.Close()
 		provider := newTestProvider(t, server.URL, func(config *oauth2provider.Config) {
@@ -168,17 +191,43 @@ func TestContextCancellation(t *testing.T) {
 }
 
 func TestTransportFailure(t *testing.T) {
+	cause := errors.New("transport-access-token-secret")
 	client := &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
-		return nil, errors.New("transport-access-token-secret")
+		return nil, cause
 	})}
 	provider := newTestProvider(t, "https://provider.example", func(config *oauth2provider.Config) {
 		config.HTTPClient = client
 	})
-	_, err := provider.User(context.Background(), gociconnect.UserRequest{AccessToken: "access-token-secret"})
-	if !errors.Is(err, gociconnect.ErrTransport) {
-		t.Fatalf("User() error = %v", err)
+
+	tests := []struct {
+		name string
+		call func() error
+	}{
+		{name: "user", call: func() error {
+			_, err := provider.User(context.Background(), gociconnect.UserRequest{AccessToken: "access-token-secret"})
+			return err
+		}},
+		{name: "token exchange", call: func() error {
+			_, err := provider.Complete(context.Background(), validCompleteRequest())
+			return err
+		}},
+		{name: "token refresh", call: func() error {
+			_, err := provider.Refresh(context.Background(), gociconnect.RefreshRequest{RefreshToken: "refresh-token-secret"})
+			return err
+		}},
 	}
-	assertErrorRedacts(t, err, "transport-access-token-secret", "access-token-secret")
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := test.call()
+			if !errors.Is(err, gociconnect.ErrTransport) {
+				t.Fatalf("operation error = %v", err)
+			}
+			if !errors.Is(err, cause) {
+				t.Fatal("operation did not preserve its transport cause")
+			}
+			assertErrorRedacts(t, err, "transport-access-token-secret", "access-token-secret", "refresh-token-secret")
+		})
+	}
 }
 
 func TestMissingTokenInputs(t *testing.T) {
@@ -209,6 +258,10 @@ func TestInvalidConfiguration(t *testing.T) {
 		{name: "invalid token endpoint", change: func(config *oauth2provider.Config) { config.Endpoint.TokenURL = "/token" }},
 		{name: "secret in token endpoint", change: func(config *oauth2provider.Config) { config.Endpoint.TokenURL += "?client_secret=unsafe" }},
 		{name: "invalid redirect", change: func(config *oauth2provider.Config) { config.RedirectURL = "callback" }},
+		{name: "javascript redirect", change: func(config *oauth2provider.Config) { config.RedirectURL = "javascript:alert(1)" }},
+		{name: "data redirect", change: func(config *oauth2provider.Config) { config.RedirectURL = "data:text/html,unsafe" }},
+		{name: "file redirect", change: func(config *oauth2provider.Config) { config.RedirectURL = "file:///tmp/callback" }},
+		{name: "vbscript redirect", change: func(config *oauth2provider.Config) { config.RedirectURL = "vbscript:unsafe" }},
 		{name: "invalid user endpoint", change: func(config *oauth2provider.Config) { config.UserEndpoint = "file:///user" }},
 		{name: "token in user endpoint", change: func(config *oauth2provider.Config) { config.UserEndpoint += "?access_token=unsafe" }},
 		{name: "missing mapper", change: func(config *oauth2provider.Config) { config.UserMapper = nil }},

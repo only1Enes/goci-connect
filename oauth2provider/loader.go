@@ -7,8 +7,10 @@ import (
 	gociconnect "github.com/only1enes/goci-connect"
 )
 
-// Fetcher performs authenticated, bounded provider API requests. It is scoped
-// to one user-loading operation and must not be retained.
+// Fetcher performs authenticated, bounded provider API requests. It sends the
+// access token to the supplied endpoint, so loaders must use only trusted,
+// preconfigured provider URLs. A Fetcher is scoped to one user-loading
+// operation and must not be retained.
 type Fetcher interface {
 	GetJSON(context.Context, string, any) (json.RawMessage, error)
 }
@@ -54,7 +56,7 @@ func (loader mappedUserLoader) LoadUser(ctx context.Context, fetcher Fetcher, _ 
 	}
 	user, err := loader.mapper.MapUser(raw)
 	if err != nil {
-		return gociconnect.User{}, gociconnect.NewError(gociconnect.ErrorCodeDecoding, "", "map provider user", nil)
+		return gociconnect.User{}, gociconnect.NewError(gociconnect.ErrorCodeDecoding, "", "map provider user", err)
 	}
 	if user.Raw == nil {
 		user.Raw = cloneRaw(raw)

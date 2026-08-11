@@ -90,7 +90,7 @@ func (fetcher *apiFetcher) GetJSON(ctx context.Context, endpoint string, destina
 		if errors.Is(err, errResponseTooLarge) {
 			return nil, gociconnect.NewError(gociconnect.ErrorCodeResponseTooLarge, fetcher.providerName, "request provider user", nil)
 		}
-		return nil, gociconnect.NewError(gociconnect.ErrorCodeTransport, fetcher.providerName, "request provider user", nil)
+		return nil, gociconnect.NewError(gociconnect.ErrorCodeTransport, fetcher.providerName, "request provider user", err)
 	}
 	defer func() {
 		_ = response.Body.Close()

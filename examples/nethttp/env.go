@@ -18,7 +18,9 @@ func loadEnvironmentFile(path string) error {
 	if err != nil {
 		return fmt.Errorf("open environment file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	values, err := parseEnvironment(file)
 	if err != nil {
@@ -85,14 +87,21 @@ func parseEnvironmentValue(value string) (string, error) {
 }
 
 func validEnvironmentKey(key string) bool {
-	if key == "" || !(key[0] == '_' || key[0] >= 'A' && key[0] <= 'Z' || key[0] >= 'a' && key[0] <= 'z') {
+	if key == "" || !validEnvironmentKeyStart(key[0]) {
 		return false
 	}
 	for index := 1; index < len(key); index++ {
-		character := key[index]
-		if character != '_' && !(character >= 'A' && character <= 'Z') && !(character >= 'a' && character <= 'z') && !(character >= '0' && character <= '9') {
+		if !validEnvironmentKeyCharacter(key[index]) {
 			return false
 		}
 	}
 	return true
+}
+
+func validEnvironmentKeyStart(character byte) bool {
+	return character == '_' || character >= 'A' && character <= 'Z' || character >= 'a' && character <= 'z'
+}
+
+func validEnvironmentKeyCharacter(character byte) bool {
+	return validEnvironmentKeyStart(character) || character >= '0' && character <= '9'
 }

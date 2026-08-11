@@ -194,10 +194,14 @@ func validRedirectURL(value string) bool {
 	if err != nil || parsed.User != nil || parsed.Scheme == "" {
 		return false
 	}
-	if parsed.Scheme == "http" || parsed.Scheme == "https" {
+	switch strings.ToLower(parsed.Scheme) {
+	case "http", "https":
 		return parsed.Host != ""
+	case "data", "file", "javascript", "vbscript":
+		return false
+	default:
+		return true
 	}
-	return true
 }
 
 func hasProtectedEndpointParameter(endpoint string) bool {
@@ -235,7 +239,7 @@ func invalidAuthorizationParameters(parameters url.Values) bool {
 
 func isProtectedAuthorizationParameter(key string) bool {
 	switch strings.ToLower(key) {
-	case "client_id", "client_secret", "code_challenge", "code_challenge_method", "code_verifier", "redirect_uri", "response_type", "scope", "state":
+	case "access_token", "client_id", "client_secret", "code", "code_challenge", "code_challenge_method", "code_verifier", "id_token", "redirect_uri", "refresh_token", "response_type", "scope", "state":
 		return true
 	default:
 		return false

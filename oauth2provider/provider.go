@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net"
 	"net/url"
 	"strings"
 	"time"
@@ -113,6 +114,9 @@ func (provider *Provider) Refresh(ctx context.Context, request gociconnect.Refre
 	if err != nil {
 		return gociconnect.Token{}, provider.tokenOperationError(ctx, gociconnect.ErrorCodeTokenRefresh, "refresh token", err)
 	}
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return gociconnect.Token{}, provider.contextError("refresh token", ctxErr)
+	}
 	return normalizeToken(token), nil
 }
 
@@ -132,9 +136,9 @@ func (provider *Provider) loadUser(ctx context.Context, token gociconnect.Token)
 			return gociconnect.User{}, provider.contextError("load provider user", ctxErr)
 		}
 		if code, ok := gociconnect.ErrorCodeOf(err); ok {
-			return gociconnect.User{}, gociconnect.NewError(code, provider.name, "load provider user", nil)
+			return gociconnect.User{}, gociconnect.NewError(code, provider.name, "load provider user", err)
 		}
-		return gociconnect.User{}, gociconnect.NewError(gociconnect.ErrorCodeDecoding, provider.name, "load provider user", nil)
+		return gociconnect.User{}, gociconnect.NewError(gociconnect.ErrorCodeDecoding, provider.name, "load provider user", err)
 	}
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return gociconnect.User{}, provider.contextError("load provider user", ctxErr)
@@ -177,8 +181,12 @@ func (provider *Provider) tokenOperationError(ctx context.Context, code gociconn
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return provider.contextError(operation, ctxErr)
 	}
-	if errors.Is(err, errResponseTooLarge) {
+	if errors.Is(err, errResponseTooLarge) || err.Error() == "oauth2: cannot fetch token: "+errResponseTooLarge.Error() {
 		return gociconnect.NewError(gociconnect.ErrorCodeResponseTooLarge, provider.name, operation, nil)
+	}
+	var transportError net.Error
+	if errors.As(err, &transportError) {
+		return gociconnect.NewError(gociconnect.ErrorCodeTransport, provider.name, operation, err)
 	}
 	return gociconnect.NewError(code, provider.name, operation, nil)
 }

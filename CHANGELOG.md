@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Built-in GitHub, Google, Discord, and GitLab providers.
 - Concurrency-safe provider testkit.
 - Standard-library `net/http` example application.
+- Local environment template and `.env` loading for the `net/http` example.
 - CI, vulnerability scanning, dependency updates, and repository governance files.
 
 ### Changed
@@ -22,3 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - Preserve context cancellation when it races a successful provider user response.
+- Preserve context cancellation when it races a successful token refresh response.
+- Reject token-bearing authorization parameters and unsafe redirect URI schemes.
+- Classify token endpoint network failures as transport errors and preserve their wrapped causes.
+- Preserve sanitized user-loading and mapper error chains for `errors.Is` and `errors.As`.
+- Report streamed oversized token responses with the response-size error category.

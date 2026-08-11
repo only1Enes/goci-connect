@@ -1,6 +1,7 @@
 # Goci Connect
 
 [![CI](https://github.com/only1enes/goci-connect/actions/workflows/ci.yml/badge.svg)](https://github.com/only1enes/goci-connect/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/only1enes/goci-connect.svg)](https://pkg.go.dev/github.com/only1enes/goci-connect)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Goci Connect is a framework-agnostic and extensible social authentication provider toolkit for Go.
@@ -196,6 +197,7 @@ if errors.Is(err, gociconnect.ErrUnsupported) {
 ```
 
 Refresh results contain normalized token fields only. Persist tokens as secrets and never send them to browser-visible output or application logs.
+When a provider does not rotate the refresh token, the existing refresh token is preserved in the returned value.
 
 ## Scopes and authorization parameters
 
@@ -377,6 +379,8 @@ Use `UserLoader` instead of `UserMapper` when a provider requires multiple authe
 
 [`examples/nethttp`](examples/nethttp) is a complete standard-library application with GitHub and Google configuration, opaque cookies, server-side authorization sessions, expiry, one-time callback consumption, secure response headers, and graceful shutdown.
 
+For local use, copy `.env.example` to `.env` and fill in one or both provider configurations. The example loads this file without overriding environment variables already supplied by the process.
+
 The example's in-memory session store is intentionally local-only. Production deployments need durable or distributed protected storage appropriate to their architecture.
 
 ## Concurrency
@@ -393,6 +397,7 @@ Applications remain responsible for concurrency-safe session and token storage. 
 - Put only a random opaque session identifier in an `HttpOnly`, `SameSite` cookie; use `Secure` with HTTPS.
 - Keep state verification enabled and preserve PKCE session data exactly as returned.
 - Use HTTPS provider endpoints, explicit HTTP client timeouts, and request contexts with deadlines.
+- Custom user loaders must pass only trusted, preconfigured provider URLs to the authenticated fetcher.
 - Keep Go and dependencies patched, and run `govulncheck ./...` regularly.
 - Treat `User.Raw` and token metadata as provider-controlled input.
 
